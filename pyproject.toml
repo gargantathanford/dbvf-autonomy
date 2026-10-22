@@ -1,0 +1,15 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dbvf"
+version = "0.0.0"
+requires-python = ">=3.10"
+dependencies = ["mavsdk==4.0.6"]
+
+[project.optional-dependencies]
+dev = ["pytest>=8"]
+
+[tool.setuptools]
+packages = ["dbvf"]
