@@ -54,3 +54,17 @@ async def watch_health(telemetry: TelemetryAsync, state: VehicleState) -> None:
 	"""Copy each new armable value into the record."""
 	async for health in telemetry.subscribe_health():
 		state.is_armable = health.is_armable
+
+
+def start(drone: System, state: VehicleState) -> None: 
+	"""Start one watcher task per telemetry stream. Keep the returned list."""
+	telemetry = TelemetryAsync(drone)
+	watchers = (
+		watch_position,
+		watch_flight_mode,
+		watch_armed,
+		watch_in_air,
+		watch_battery,
+		watch_health,
+	)
+	return [asyncio.create_task(watcher(telemetry, state)) for watcher in watchers]
