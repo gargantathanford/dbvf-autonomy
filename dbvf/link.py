@@ -30,7 +30,7 @@ async def run(url: str, timeout_s: float) -> None:
 		drone = await connect (mavsdk, url, timeout_s)
 		system_id = await drone.get_system_id()
 		autopilot = await drone.autopilot_type()
-		print(f"Connected: system id {system_id}, autopilot {autopilot_name}")
+		print(f"Connected: system id {system_id}, autopilot {autopilot.name}")
 
 
 def main() -> None:
