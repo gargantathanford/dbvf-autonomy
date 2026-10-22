@@ -56,9 +56,9 @@ Terminal 1: start the PX4 simulator (SIH, no graphics):
 ```
 docker run --rm -it px4io/px4-sitl:latest
 ```
-
+```
 Linux host: docker run --rm -it --network host px4io/px4-sitl:latest
-
+```
 
 Wait for the `pxh>` prompt. Do not add `-p` port options: on Docker Desktop the container sends MAVLink to the host by itself.
 
