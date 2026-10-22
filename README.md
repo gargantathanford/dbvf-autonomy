@@ -64,6 +64,21 @@ Wait for the `pxh>` prompt. Do not add `-p` port options: on Docker Desktop the 
 
 Open QGroundControl. It connects by itself on UDP 14550.
 
+#### Without Docker
+PX4 then sends to the same ports on this computer, so `python -m dbvf.link` works with no change.
+- Ubuntu 22.04/24.04, pre-built (no build): download `px4_*.deb` for your PX4 version
+  from https://github.com/PX4/PX4-Autopilot/releases, then
+```
+  sudo apt install ./px4_*.deb
+  px4
+```
+- Any supported OS, from source (see the PX4 dev-environment docs for setup):
+  - Ubuntu: `make px4_sitl sihsim_quadx`
+  - macOS: `make px4_sitl gazebo-classic`
+- Windows: use WSL2 + Ubuntu, and run both PX4 and this repo inside WSL2.
+
+Use the same PX4 version as the flight controller firmware.
+
 Terminal 2 (repo folder, venv active):
 ```
 python -m dbvf.link
