@@ -59,11 +59,30 @@ def land(seq: int, lat_deg: float, lon_deg: float) -> MissionItem:
     return item(seq, MAV_CMD_NAV_LAND, lat_deg, lon_deg, 0.0)
 
 
+def waypoint(seq: int, lat_deg: float, lon_deg: float, alt_m: float, hold_s: float = 0.0) -> MissionItem:
+    """Fly to this position at alt_m above home. Hold there for hold_s seconds."""
+    return item(seq, MAV_CMD_NAV_WAYPOINT, lat_deg, lon_deg, alt_m, param1=hold_s)
+
+
 def gm1_mission(lat_deg: float, lon_deg: float, alt_m: float) -> list[MissionItem]:
     """GM-1 override test: autonomous takeoff and landing at one location (RFP p. 24)."""
     return [
         takeoff(0, lat_deg, lon_deg, alt_m),
         land(1, lat_deg, lon_deg),
+    ]
+
+
+def transit_leg(
+    start: tuple[float, float], end: tuple[float, float], alt_m: float, hold_s: float = 2.0
+) -> list[MissionItem]:
+    """Vertical takeoff at start, transit at alt_m, stop above end, land at end (RFP p. 23).
+
+    start and end are (lat_deg, lon_deg).
+    """
+    return [
+        takeoff(0, start[0], start[1], alt_m),
+        waypoint(1, end[0], end[1], alt_m, hold_s),
+        land(2, end[0], end[1]),
     ]
 
 
@@ -109,6 +128,15 @@ async def follow(state: VehicleState, period_s: float = 1.0) -> str:
         await asyncio.sleep(period_s)
 
 
+async def fly_leg(plugins: Plugins, state: VehicleState, items: list[MissionItem], name: str) -> str:
+    """Wait for armable, upload, arm, start, then follow. Return MODE_CHANGED or DONE."""
+    await wait_until(lambda: state.is_armable, 30.0)
+    print(f"{name}: uploading {len(items)} items, ARMING, starting...")
+    await upload_and_start(plugins, items)
+    await wait_until(lambda: state.flight_mode == FlightMode.MISSION, 10.0)
+    return await follow(state)
+
+
 async def run(url: str, timeout_s: float, alt_m: float) -> None:
     """Fly the GM-1 test mission at the current position, then report how it ended."""
     async with make_mavsdk() as mavsdk:
@@ -120,10 +148,7 @@ async def run(url: str, timeout_s: float, alt_m: float) -> None:
             print("Waiting for armable and a position...")
             await wait_until(lambda: state.is_armable and state.latitude_deg is not None, 30.0)
             items = gm1_mission(state.latitude_deg, state.longitude_deg, alt_m)
-            print(f"Uploading {len(items)} items, arming, starting...")
-            await upload_and_start(plugins, items)
-            await wait_until(lambda: state.flight_mode == FlightMode.MISSION, 10.0)
-            result = await follow(state)
+            result = await fly_leg(plugins, state, items, "GM-1")
             if result == "MODE_CHANGED":
                 print(f"Mode changed to {state.flight_mode.name}: companion stops, sends nothing.")
             else:
