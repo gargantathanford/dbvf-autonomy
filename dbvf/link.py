@@ -2,8 +2,13 @@
 
 import argparse
 import asyncio
+from dataclasses import dataclass
+
 
 from mavsdk.asyncio import ComponentType, Configuration, Mavsdk, System
+from mavsdk.asyncio.plugins.action import ActionAsync
+from mavsdk.asyncio.plugins.mission_raw import MissionRawAsync
+from mavsdk.asyncio.plugins.telemetry import TelemetryAsync
 
 SITL_URL = "udpin://0.0.0.0:14540"
 
@@ -21,6 +26,23 @@ async def connect(mavsdk: Mavsdk, url: str, timeout_s: float = 10.0) -> System:
 	if drone is None:
 		raise TimeoutError(f"No autopilot foundon {url} within {timeout_s} s")
 	return drone
+
+
+@dataclass(frozen=True, slots=True)
+class Plugins:
+	"""ONe MAVSDK plugin object of each type, shared by all modules."""
+
+	action: ActionAsync
+	mission_raw: MissionRawAsync
+	telemetry: TelemetryAsync
+
+def make_plugins(drone: System) -> Plugins:
+	"""Make each plugin once for this drone."""
+	return Plugins(
+		action=ActionAsync(drone),
+		mission_raw=MissionRawAsync(drone),
+		telemetry=TelemetryAsync(drone),
+	)
 
 
 async def run(url: str, timeout_s: float) -> None:

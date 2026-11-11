@@ -1,7 +1,12 @@
 import asyncio
 from types import SimpleNamespace
 
-from dbvf.vehicle_state import VehicleState, watch_armed, watch_position
+from dbvf.vehicle_state import (
+    VehicleState,
+    watch_armed,
+    watch_mission_progress,
+    watch_position,
+)
 
 
 class FakeTelemetry:
@@ -16,11 +21,19 @@ class FakeTelemetry:
         yield True
 
 
+class FakeMissionRaw:
+    """Acts like MissionRawAsync: gives one progress value, then ends."""
+
+    async def subscribe_mission_progress(self):
+        yield SimpleNamespace(current=2, total=5)
+
+
 def test_new_state_has_no_data():
     state = VehicleState()
     assert state.relative_altitude_m is None
     assert state.armed is None
     assert state.flight_mode is None
+    assert state.mission_current is None
 
 
 def test_watch_position_copies_values():
@@ -36,3 +49,10 @@ def test_watch_armed_copies_value():
     asyncio.run(watch_armed(FakeTelemetry(), state))
     assert state.armed is True
     assert state.in_air is None
+
+
+def test_watch_mission_progress_copies_values():
+    state = VehicleState()
+    asyncio.run(watch_mission_progress(FakeMissionRaw(), state))
+    assert state.mission_current == 2
+    assert state.mission_total == 5
